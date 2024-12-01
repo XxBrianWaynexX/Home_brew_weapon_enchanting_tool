@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Homebrew Weapon Enchanting Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+    select, input, button {
+      margin: 10px 0;
+      padding: 8px;
+      width: 100%;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .failure {
+      color: red;
+      font-weight: bold;
+    }
+    .failure-effect {
+      color: darkred;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Homebrew Weapon Enchanting Tool</h1>
+
+    <!-- Weapon Selection -->
+    <label for="weapon">Select a Weapon Type:</label>
+    <select id="weapon">
+      <option value="">-- Select a Weapon --</option>
+      <option value="Longsword">Longsword</option>
+      <option value="Dagger">Dagger</option>
+      <option value="Greatsword">Greatsword</option>
+      <option value="Bow">Bow</option>
+      <option value="Custom">Custom (Enter Below)</option>
+    </select>
+    <input type="text" id="customWeapon" placeholder="Enter custom weapon name" style="display:none;">
+
+    <!-- Enchantment Properties -->
+    <label for="attackBonus">Select Attack Bonus:</label>
+    <select id="attackBonus">
+      <option value="">-- No Bonus --</option>
+      <option value="+1">+1</option>
+      <option value="+2">+2</option>
+      <option value="+3">+3</option>
+    </select>
+
+    <label for="damageType">Select Damage Type:</label>
+    <select id="damageType">
+      <option value="">-- Select Damage Type --</option>
+      <option value="Fire">Fire</option>
+      <option value="Radiant">Radiant</option>
+      <option value="Necrotic">Necrotic</option>
+      <option value="Cold">Cold</option>
+      <option value="Lightning">Lightning</option>
+      <option value="Force">Force</option>
+    </select>
+
+    <label for="specialEffect">Select Special Effect:</label>
+    <select id="specialEffect">
+      <option value="">-- No Special Effect --</option>
+      <option value="Blinds on Hit">Blinds on Hit</option>
+      <option value="Stuns on Crit">Stuns on Critical Hit</option>
+      <option value="Extra Damage to Undead">Deals Extra Damage to Undead</option>
+      <option value="Light Emission">Emits Bright Light</option>
+      <option value="Returning">Returns to Wielder When Thrown</option>
+    </select>
+
+    <!-- Material Requirements -->
+    <h2>Required Materials</h2>
+    <div id="materials"></div>
+
+    <!-- Risk Roll -->
+    <button onclick="generateEnchantingDetails()">Generate Enchanting Details</button>
+    <div id="enchantingDetails"></div>
+    <button id="rollButton" style="display:none;" onclick="rollOutcome()">Attempt Enchantment</button>
+    <div id="enchantmentResults"></div>
+  </div>
+
+  <script>
+    // Material requirements for enchantments
+    const enchantmentMaterials = {
+      "+1": { materials: "Magical Iron Ingot", cost: 100 },
+      "+2": { materials: "Refined Mithril", cost: 500 },
+      "+3": { materials: "Adamantine Shard", cost: 1500 },
+      "Fire": { materials: "Fire Essence", cost: 300 },
+      "Radiant": { materials: "Radiant Crystal", cost: 400 },
+      "Necrotic": { materials: "Shadow Shard", cost: 350 },
+      "Cold": { materials: "Frost Core", cost: 300 },
+      "Lightning": { materials: "Storm Orb", cost: 350 },
+      "Force": { materials: "Arcane Residuum", cost: 500 },
+      "Blinds on Hit": { materials: "Light-Infused Gem", cost: 200 },
+      "Stuns on Crit": { materials: "Thunder Stone", cost: 250 },
+      "Extra Damage to Undead": { materials: "Holy Water Vial", cost: 100 },
+      "Light Emission": { materials: "Sunstone", cost: 150 },
+      "Returning": { materials: "Binding Rune", cost: 200 },
+    };
+
+    // Failure effects table
+    const failureEffects = [
+      "The weapon is destroyed in the process.",
+      "The enchantment fails, and the materials are consumed.",
+      "The weapon is cursed, inflicting harm on its wielder.",
+      "An explosion deals 2d6 fire damage to everyone nearby.",
+      "A minor rift summons a hostile elemental spirit.",
+      "The enchantment succeeds partially but at a reduced bonus (+1 instead of +2)."
+    ];
+
+    // Generate enchanting details
+    function generateEnchantingDetails() {
+      const weapon = document.getElementById("weapon").value;
+      const customWeapon = document.getElementById("customWeapon").value;
+      const attackBonus = document.getElementById("attackBonus").value;
+      const damageType = document.getElementById("damageType").value;
+      const specialEffect = document.getElementById("specialEffect").value;
+
+      // Show custom weapon input if selected
+      if (weapon === "Custom") {
+        document.getElementById("customWeapon").style.display = "block";
+      } else {
+        document.getElementById("customWeapon").style.display = "none";
+      }
+
+      // Validate selection
+      if (!weapon && !customWeapon) {
+        alert("Please select or enter a weapon type.");
+        return;
+      }
+
+      // Calculate materials and costs
+      let requiredMaterials = [];
+      let totalCost = 0;
+
+      if (attackBonus) {
+        requiredMaterials.push(`${enchantmentMaterials[attackBonus].materials} (${enchantmentMaterials[attackBonus].cost} gp)`);
+        totalCost += enchantmentMaterials[attackBonus].cost;
+      }
+      if (damageType) {
+        requiredMaterials.push(`${enchantmentMaterials[damageType].materials} (${enchantmentMaterials[damageType].cost} gp)`);
+        totalCost += enchantmentMaterials[damageType].cost;
+      }
+      if (specialEffect) {
+        requiredMaterials.push(`${enchantmentMaterials[specialEffect].materials} (${enchantmentMaterials[specialEffect].cost} gp)`);
+        totalCost += enchantmentMaterials[specialEffect].cost;
+      }
+
+      // Display details
+      document.getElementById("materials").innerHTML = `
+        <p><strong>Materials Needed:</strong></p>
+        <ul>
+          ${requiredMaterials.map(material => `<li>${material}</li>`).join("")}
+        </ul>
+        <p><strong>Total Cost:</strong> ${totalCost} gp</p>
+      `;
+
+      document.getElementById("enchantingDetails").innerHTML = `
+        <h2>Enchanting Details</h2>
+        <p><strong>Weapon:</strong> ${customWeapon || weapon}</p>
+        <p><strong>Attack Bonus:</strong> ${attackBonus || "None"}</p>
+        <p><strong>Damage Type:</strong> ${damageType || "None"}</p>
+        <p><strong>Special Effect:</strong> ${specialEffect || "None"}</p>
+      `;
+
+      document.getElementById("rollButton").style.display = "block";
+    }
+
+    // Roll for outcome
+    function rollOutcome() {
+      const roll = Math.floor(Math.random() * 20) + 1; // Roll a d20
+      const success = roll >= 10; // Arbitrary success threshold
+
+      if (success) {
+        document.getElementById("enchantmentResults").innerHTML = `
+          <h2 class="success">Success!</h2>
+          <p>The enchantment was successful!</p>
+        `;
+      } else {
+        const failureEffect = failureEffects[Math.floor(Math.random() * failureEffects.length)];
+        document.getElementById("enchantmentResults").innerHTML = `
+          <h2 class="failure">Failure!</h2>
+          <p>The enchantment failed.</p>
+          <p class="failure-effect">Effect: ${failureEffect}</p>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
