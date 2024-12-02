@@ -123,10 +123,10 @@
     <div id="enchantingDetails"></div>
     <button id="rollButton" style="display:none;" onclick="rollOutcome()">Attempt Enchantment</button>
     <div id="enchantmentResults"></div>
-    <div id="finalWeapon"></div>
   </div>
 
   <script>
+    // Quirks for partial success
     const quirks = [
       "The weapon hums when held.",
       "The weapon emits faint light intermittently.",
@@ -135,36 +135,75 @@
       "The weapon is cold to the touch."
     ];
 
-    function generateEnchantingDetails() {
-      // Input gathering and validation from previous steps...
-    }
+    // Failure effects for crafting failures
+    const failureEffects = [
+      "The weapon is destroyed in the process.",
+      "The enchantment fails, and the materials are consumed.",
+      "The weapon is cursed, inflicting harm on its wielder.",
+      "An explosion deals 2d6 fire damage to everyone nearby.",
+      "A minor rift summons a hostile elemental spirit."
+    ];
 
+    // Roll outcome for crafting
     function rollOutcome() {
-      const roll = Math.floor(Math.random() * 20) + 1;
-      const result = roll >= 15 ? "success" : roll >= 10 ? "partial" : "failure";
+      const classLevel = parseInt(document.getElementById("classLevel").value);
+      const proficiencyBonus = parseInt(document.getElementById("proficiencyBonus").value);
+      const weapon = document.getElementById("weapon").value || document.getElementById("customWeapon").value;
+      const attackBonus = document.getElementById("attackBonus").value;
+      const damageType = document.getElementById("damageType").value;
+      const specialEffects = Array.from(document.getElementById("specialEffects").selectedOptions).map(opt => opt.value);
 
-      if (result === "success" || result === "partial") {
-        const weaponName = prompt("Name your weapon:", "Unnamed Weapon") || "Unnamed Weapon";
-        const finalDescription = generateWeaponDescription(weaponName, result === "partial" ? quirks[Math.floor(Math.random() * quirks.length)] : null);
-        document.getElementById("finalWeapon").innerHTML = finalDescription;
+      const baseDC = 10;
+      const attackBonusDC = attackBonus ? parseInt(attackBonus.replace("+", "")) * 5 : 0;
+      const damageTypeDC = damageType ? 5 : 0;
+      const specialEffectsDC = specialEffects.length * 5;
+      const craftingDC = baseDC + attackBonusDC + damageTypeDC + specialEffectsDC;
+
+      const roll = Math.floor(Math.random() * 20) + 1;
+      const totalRoll = roll + classLevel + proficiencyBonus;
+
+      let resultMessage = "";
+      let weaponName = "";
+      let quirk = null;
+
+      if (totalRoll >= craftingDC) {
+        // Success
+        weaponName = prompt("Name your weapon:", "Unnamed Weapon") || "Unnamed Weapon";
+        resultMessage = generateWeaponDescription(weaponName, weapon, attackBonus, damageType, specialEffects, null);
+      } else if (totalRoll >= craftingDC - 5) {
+        // Partial Success with Quirk
+        weaponName = prompt("Name your weapon (Partial Success):", "Unnamed Weapon") || "Unnamed Weapon";
+        quirk = quirks[Math.floor(Math.random() * quirks.length)];
+        resultMessage = generateWeaponDescription(weaponName, weapon, attackBonus, damageType, specialEffects, quirk);
+      } else {
+        // Failure
+        const failureEffect = failureEffects[Math.floor(Math.random() * failureEffects.length)];
+        resultMessage = `
+          <h2 class="failure">Failure!</h2>
+          <p>The enchantment failed.</p>
+          <p class="failure-effect">Effect: ${failureEffect}</p>
+        `;
       }
+
+      document.getElementById("enchantmentResults").innerHTML = resultMessage;
     }
 
-    function generateWeaponDescription(name, quirk) {
+    // Generate a 5e-style weapon description
+    function generateWeaponDescription(name, weaponType, attackBonus, damageType, specialEffects, quirk) {
+      const rarity = attackBonus === "+3" ? "very rare" : attackBonus === "+2" ? "rare" : "uncommon";
+      const attunement = "requires attunement";
+      const bonusText = attackBonus ? `${attackBonus} to attack and damage rolls` : "no bonus";
+      const damageText = damageType ? `${damageType} damage` : "standard damage";
+      const effectsText = specialEffects.length ? specialEffects.join(", ") : "no special effects";
+      const quirkText = quirk ? `<p><strong>Quirk:</strong> ${quirk}</p>` : "";
+
       return `
         <div class="weapon-output">
           <div class="weapon-name">${name}</div>
-          <p><em>Weapon (longsword), rare (requires attunement)</em></p>
-          <p>This weapon grants a +2 bonus to attack rolls, deals cold damage, and has the Foe Slayer property (extra damage to fiends).</p>
-          ${quirk ? `<p><strong>Quirk:</strong> ${quirk}</p>` : ""}
-          <div class="weapon-properties">
-            <p><strong>Properties:</strong></p>
-            <ul>
-              <li>Bonus: +2</li>
-              <li>Damage: 1d8 + 2 cold damage</li>
-              <li>Foe Slayer: Extra 2d6 cold damage to fiends</li>
-            </ul>
-          </div>
+          <p><em>Weapon (${weaponType}), ${rarity} (${attunement})</em></p>
+          <p>This weapon grants ${bonusText} and deals ${damageText}.</p>
+          <p><strong>Special Effects:</strong> ${effectsText}</p>
+          ${quirkText}
         </div>
       `;
     }
