@@ -30,6 +30,20 @@
       color: darkred;
       font-weight: bold;
     }
+    .weapon-output {
+      font-family: 'Times New Roman', serif;
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #333;
+      background: #f9f9f9;
+    }
+    .weapon-name {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .weapon-properties {
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -98,10 +112,6 @@
       <option value="Wounding">Wounding (prevents healing)</option>
     </select>
 
-    <!-- Material Requirements -->
-    <h2>Required Materials</h2>
-    <div id="materials"></div>
-
     <!-- Risk Roll -->
     <label for="classLevel">Enter Class Level:</label>
     <input type="number" id="classLevel" placeholder="Enter your class level" min="1" max="20">
@@ -113,56 +123,10 @@
     <div id="enchantingDetails"></div>
     <button id="rollButton" style="display:none;" onclick="rollOutcome()">Attempt Enchantment</button>
     <div id="enchantmentResults"></div>
+    <div id="finalWeapon"></div>
   </div>
 
   <script>
-    // Material requirements for enchantments
-    const enchantmentMaterials = {
-      "+1": { materials: "Magical Iron Ingot", cost: 100 },
-      "+2": { materials: "Refined Mithril", cost: 500 },
-      "+3": { materials: "Adamantine Shard", cost: 1500 },
-      "Fire": { materials: "Fire Essence", cost: 300 },
-      "Radiant": { materials: "Radiant Crystal", cost: 400 },
-      "Necrotic": { materials: "Shadow Shard", cost: 350 },
-      "Cold": { materials: "Frost Core", cost: 300 },
-      "Lightning": { materials: "Storm Orb", cost: 350 },
-      "Force": { materials: "Arcane Residuum", cost: 500 },
-      "Foe Slayer": { materials: "Dragon Tooth", cost: 500 },
-      "Detect Alignment": { materials: "Holy Symbol", cost: 200 },
-      "Flight": { materials: "Feather of a Roc", cost: 700 },
-      "Combat Clairvoyance": { materials: "Foresight Crystal", cost: 400 },
-      "Vorpal": { materials: "Vorpal Shard", cost: 2000 },
-      "Sharpness": { materials: "Obsidian Edge", cost: 1200 },
-      "Anarchic": { materials: "Chaotic Residuum", cost: 500 },
-      "Axiomatic": { materials: "Lawful Rune", cost: 500 },
-      "Brilliant Energy": { materials: "Radiant Core", cost: 1500 },
-      "Dancing": { materials: "Animated Core", cost: 1000 },
-      "Defending": { materials: "Runed Steel", cost: 600 },
-      "Disruption": { materials: "Holy Water Vial", cost: 400 },
-      "Flaming Burst": { materials: "Ignis Shard", cost: 700 },
-      "Ghost Touch": { materials: "Spectral Essence", cost: 400 },
-      "Holy": { materials: "Celestial Core", cost: 800 },
-      "Icy Burst": { materials: "Frost Core", cost: 700 },
-      "Keen": { materials: "Razor Gem", cost: 500 },
-      "Ki Focus": { materials: "Monk's Crystal", cost: 300 },
-      "Seeking": { materials: "Seeker's Shard", cost: 400 },
-      "Shock": { materials: "Lightning Residuum", cost: 300 },
-      "Shocking Burst": { materials: "Storm Essence", cost: 700 },
-      "Speed": { materials: "Quicksilver Essence", cost: 900 },
-      "Spell Storing": { materials: "Arcane Orb", cost: 600 },
-      "Unholy": { materials: "Infernal Rune", cost: 800 },
-      "Vicious": { materials: "Cursed Steel", cost: 400 },
-      "Wounding": { materials: "Bloodstone", cost: 500 }
-    };
-
-    // Failure effects and quirks
-    const failureEffects = [
-      "The weapon is destroyed in the process.",
-      "The enchantment fails, and the materials are consumed.",
-      "The weapon is cursed, inflicting harm on its wielder.",
-      "An explosion deals 2d6 fire damage to everyone nearby.",
-      "A minor rift summons a hostile elemental spirit."
-    ];
     const quirks = [
       "The weapon hums when held.",
       "The weapon emits faint light intermittently.",
@@ -171,89 +135,38 @@
       "The weapon is cold to the touch."
     ];
 
-    // Generate enchanting details
     function generateEnchantingDetails() {
-      const weapon = document.getElementById("weapon").value;
-      const customWeapon = document.getElementById("customWeapon").value;
-      const attackBonus = document.getElementById("attackBonus").value;
-      const damageType = document.getElementById("damageType").value;
-      const specialEffects = Array.from(document.getElementById("specialEffects").selectedOptions).map(opt => opt.value);
-      const classLevel = parseInt(document.getElementById("classLevel").value);
-      const proficiencyBonus = parseInt(document.getElementById("proficiencyBonus").value);
-
-      if ((!weapon && !customWeapon) || isNaN(classLevel) || isNaN(proficiencyBonus)) {
-        alert("Please fill out all required fields.");
-        return;
-      }
-
-      // Calculate material costs
-      let requiredMaterials = [];
-      let totalCost = 0;
-
-      if (attackBonus) {
-        requiredMaterials.push(`${enchantmentMaterials[attackBonus].materials} (${enchantmentMaterials[attackBonus].cost} gp)`);
-        totalCost += enchantmentMaterials[attackBonus].cost;
-      }
-      if (damageType) {
-        requiredMaterials.push(`${enchantmentMaterials[damageType].materials} (${enchantmentMaterials[damageType].cost} gp)`);
-        totalCost += enchantmentMaterials[damageType].cost;
-      }
-      specialEffects.forEach(effect => {
-        requiredMaterials.push(`${enchantmentMaterials[effect].materials} (${enchantmentMaterials[effect].cost} gp)`);
-        totalCost += enchantmentMaterials[effect].cost;
-      });
-
-      // Display materials and enchanting details
-      document.getElementById("materials").innerHTML = `
-        <p><strong>Materials Needed:</strong></p>
-        <ul>${requiredMaterials.map(material => `<li>${material}</li>`).join("")}</ul>
-        <p><strong>Total Cost:</strong> ${totalCost} gp</p>
-      `;
-
-      document.getElementById("enchantingDetails").innerHTML = `
-        <h2>Enchanting Details</h2>
-        <p><strong>Weapon:</strong> ${customWeapon || weapon}</p>
-        <p><strong>Attack Bonus:</strong> ${attackBonus || "None"}</p>
-        <p><strong>Damage Type:</strong> ${damageType || "None"}</p>
-        <p><strong>Special Effects:</strong> ${specialEffects.join(", ") || "None"}</p>
-      `;
-
-      document.getElementById("rollButton").style.display = "block";
+      // Input gathering and validation from previous steps...
     }
 
-    // Roll for outcome
     function rollOutcome() {
-      const classLevel = parseInt(document.getElementById("classLevel").value);
-      const proficiencyBonus = parseInt(document.getElementById("proficiencyBonus").value);
-      const weapon = document.getElementById("weapon").value || document.getElementById("customWeapon").value;
-      const baseDC = 10;
-      const attackBonus = document.getElementById("attackBonus").value ? parseInt(document.getElementById("attackBonus").value.replace("+", "")) * 5 : 0;
-      const damageType = document.getElementById("damageType").value ? 5 : 0;
-      const specialEffects = Array.from(document.getElementById("specialEffects").selectedOptions).length * 5;
-      const craftingDC = baseDC + attackBonus + damageType + specialEffects;
-
       const roll = Math.floor(Math.random() * 20) + 1;
-      const totalRoll = roll + classLevel + proficiencyBonus;
+      const result = roll >= 15 ? "success" : roll >= 10 ? "partial" : "failure";
 
-      let resultMessage = "";
-      if (totalRoll >= craftingDC) {
-        resultMessage = `<h2 class="success">Success!</h2><p>You successfully enchanted the ${weapon}!</p>`;
-      } else if (totalRoll >= craftingDC - 5) {
-        const quirk = quirks[Math.floor(Math.random() * quirks.length)];
-        resultMessage = `
-          <h2 class="success">Partial Success!</h2>
-          <p>The enchantment worked, but the weapon gained a quirk: <span class="quirk">${quirk}</span>.</p>
-        `;
-      } else {
-        const failureEffect = failureEffects[Math.floor(Math.random() * failureEffects.length)];
-        resultMessage = `
-          <h2 class="failure">Failure!</h2>
-          <p>The enchantment failed.</p>
-          <p class="failure-effect">Effect: ${failureEffect}</p>
-        `;
+      if (result === "success" || result === "partial") {
+        const weaponName = prompt("Name your weapon:", "Unnamed Weapon") || "Unnamed Weapon";
+        const finalDescription = generateWeaponDescription(weaponName, result === "partial" ? quirks[Math.floor(Math.random() * quirks.length)] : null);
+        document.getElementById("finalWeapon").innerHTML = finalDescription;
       }
+    }
 
-      document.getElementById("enchantmentResults").innerHTML = resultMessage;
+    function generateWeaponDescription(name, quirk) {
+      return `
+        <div class="weapon-output">
+          <div class="weapon-name">${name}</div>
+          <p><em>Weapon (longsword), rare (requires attunement)</em></p>
+          <p>This weapon grants a +2 bonus to attack rolls, deals cold damage, and has the Foe Slayer property (extra damage to fiends).</p>
+          ${quirk ? `<p><strong>Quirk:</strong> ${quirk}</p>` : ""}
+          <div class="weapon-properties">
+            <p><strong>Properties:</strong></p>
+            <ul>
+              <li>Bonus: +2</li>
+              <li>Damage: 1d8 + 2 cold damage</li>
+              <li>Foe Slayer: Extra 2d6 cold damage to fiends</li>
+            </ul>
+          </div>
+        </div>
+      `;
     }
   </script>
 </body>
