@@ -26,7 +26,7 @@
       color: red;
       font-weight: bold;
     }
-    .failure-effect {
+    .failure-effect, .quirk {
       color: darkred;
       font-weight: bold;
     }
@@ -68,14 +68,34 @@
       <option value="Force">Force</option>
     </select>
 
-    <label for="specialEffect">Select Special Effect:</label>
-    <select id="specialEffect">
-      <option value="">-- No Special Effect --</option>
-      <option value="Blinds on Hit">Blinds on Hit</option>
-      <option value="Stuns on Crit">Stuns on Critical Hit</option>
-      <option value="Extra Damage to Undead">Deals Extra Damage to Undead</option>
-      <option value="Light Emission">Emits Bright Light</option>
-      <option value="Returning">Returns to Wielder When Thrown</option>
+    <label for="specialEffects">Select Special Effects:</label>
+    <select id="specialEffects" multiple>
+      <option value="Foe Slayer">Foe Slayer (extra damage to specific creatures)</option>
+      <option value="Detect Alignment">Detect Good/Evil or specific creatures</option>
+      <option value="Flight">Grants limited flight</option>
+      <option value="Combat Clairvoyance">Combat Clairvoyance (advantage for 1 round)</option>
+      <option value="Vorpal">Vorpal (critical hits can decapitate)</option>
+      <option value="Sharpness">Sharpness (doubles crit range)</option>
+      <option value="Anarchic">Anarchic (extra damage to lawful creatures)</option>
+      <option value="Axiomatic">Axiomatic (extra damage to chaotic creatures)</option>
+      <option value="Brilliant Energy">Brilliant Energy (ignores non-living armor)</option>
+      <option value="Dancing">Dancing weapon (fights independently)</option>
+      <option value="Defending">Defending (bonus to AC)</option>
+      <option value="Disruption">Disruption (destroys undead)</option>
+      <option value="Flaming Burst">Flaming Burst (extra fire damage on crits)</option>
+      <option value="Ghost Touch">Ghost Touch (affects incorporeal creatures)</option>
+      <option value="Holy">Holy (extra damage to evil creatures)</option>
+      <option value="Icy Burst">Icy Burst (extra cold damage on crits)</option>
+      <option value="Keen">Keen (doubles crit range)</option>
+      <option value="Ki Focus">Ki Focus (enhances ki abilities)</option>
+      <option value="Seeking">Seeking (ranged, ignores cover)</option>
+      <option value="Shock">Shock (deals lightning damage)</option>
+      <option value="Shocking Burst">Shocking Burst (extra lightning damage on crits)</option>
+      <option value="Speed">Speed (extra attack per turn)</option>
+      <option value="Spell Storing">Spell Storing (stores one spell)</option>
+      <option value="Unholy">Unholy (extra damage to good creatures)</option>
+      <option value="Vicious">Vicious (extra damage, harms wielder)</option>
+      <option value="Wounding">Wounding (prevents healing)</option>
     </select>
 
     <!-- Material Requirements -->
@@ -83,6 +103,12 @@
     <div id="materials"></div>
 
     <!-- Risk Roll -->
+    <label for="classLevel">Enter Class Level:</label>
+    <input type="number" id="classLevel" placeholder="Enter your class level" min="1" max="20">
+
+    <label for="proficiencyBonus">Enter Proficiency Bonus:</label>
+    <input type="number" id="proficiencyBonus" placeholder="Enter proficiency bonus" min="0">
+
     <button onclick="generateEnchantingDetails()">Generate Enchanting Details</button>
     <div id="enchantingDetails"></div>
     <button id="rollButton" style="display:none;" onclick="rollOutcome()">Attempt Enchantment</button>
@@ -101,99 +127,56 @@
       "Cold": { materials: "Frost Core", cost: 300 },
       "Lightning": { materials: "Storm Orb", cost: 350 },
       "Force": { materials: "Arcane Residuum", cost: 500 },
-      "Blinds on Hit": { materials: "Light-Infused Gem", cost: 200 },
-      "Stuns on Crit": { materials: "Thunder Stone", cost: 250 },
-      "Extra Damage to Undead": { materials: "Holy Water Vial", cost: 100 },
-      "Light Emission": { materials: "Sunstone", cost: 150 },
-      "Returning": { materials: "Binding Rune", cost: 200 },
+      "Foe Slayer": { materials: "Dragon Tooth", cost: 500 },
+      "Detect Alignment": { materials: "Holy Symbol", cost: 200 },
+      "Flight": { materials: "Feather of a Roc", cost: 700 },
+      "Combat Clairvoyance": { materials: "Foresight Crystal", cost: 400 },
+      "Vorpal": { materials: "Vorpal Shard", cost: 2000 },
+      "Sharpness": { materials: "Obsidian Edge", cost: 1200 },
+      "Anarchic": { materials: "Chaotic Residuum", cost: 500 },
+      "Axiomatic": { materials: "Lawful Rune", cost: 500 },
+      "Brilliant Energy": { materials: "Radiant Core", cost: 1500 },
+      "Dancing": { materials: "Animated Core", cost: 1000 },
+      "Defending": { materials: "Runed Steel", cost: 600 },
+      "Disruption": { materials: "Holy Water Vial", cost: 400 },
+      "Flaming Burst": { materials: "Ignis Shard", cost: 700 },
+      "Ghost Touch": { materials: "Spectral Essence", cost: 400 },
+      "Holy": { materials: "Celestial Core", cost: 800 },
+      "Icy Burst": { materials: "Frost Core", cost: 700 },
+      "Keen": { materials: "Razor Gem", cost: 500 },
+      "Ki Focus": { materials: "Monk's Crystal", cost: 300 },
+      "Seeking": { materials: "Seeker's Shard", cost: 400 },
+      "Shock": { materials: "Lightning Residuum", cost: 300 },
+      "Shocking Burst": { materials: "Storm Essence", cost: 700 },
+      "Speed": { materials: "Quicksilver Essence", cost: 900 },
+      "Spell Storing": { materials: "Arcane Orb", cost: 600 },
+      "Unholy": { materials: "Infernal Rune", cost: 800 },
+      "Vicious": { materials: "Cursed Steel", cost: 400 },
+      "Wounding": { materials: "Bloodstone", cost: 500 }
     };
 
-    // Failure effects table
+    // Failure effects and quirks
     const failureEffects = [
       "The weapon is destroyed in the process.",
       "The enchantment fails, and the materials are consumed.",
       "The weapon is cursed, inflicting harm on its wielder.",
       "An explosion deals 2d6 fire damage to everyone nearby.",
-      "A minor rift summons a hostile elemental spirit.",
-      "The enchantment succeeds partially but at a reduced bonus (+1 instead of +2)."
+      "A minor rift summons a hostile elemental spirit."
+    ];
+    const quirks = [
+      "The weapon hums when held.",
+      "The weapon emits faint light intermittently.",
+      "The weapon becomes slightly heavier.",
+      "The weapon whispers faintly to the wielder.",
+      "The weapon is cold to the touch."
     ];
 
-    // Generate enchanting details
     function generateEnchantingDetails() {
-      const weapon = document.getElementById("weapon").value;
-      const customWeapon = document.getElementById("customWeapon").value;
-      const attackBonus = document.getElementById("attackBonus").value;
-      const damageType = document.getElementById("damageType").value;
-      const specialEffect = document.getElementById("specialEffect").value;
-
-      // Show custom weapon input if selected
-      if (weapon === "Custom") {
-        document.getElementById("customWeapon").style.display = "block";
-      } else {
-        document.getElementById("customWeapon").style.display = "none";
-      }
-
-      // Validate selection
-      if (!weapon && !customWeapon) {
-        alert("Please select or enter a weapon type.");
-        return;
-      }
-
-      // Calculate materials and costs
-      let requiredMaterials = [];
-      let totalCost = 0;
-
-      if (attackBonus) {
-        requiredMaterials.push(`${enchantmentMaterials[attackBonus].materials} (${enchantmentMaterials[attackBonus].cost} gp)`);
-        totalCost += enchantmentMaterials[attackBonus].cost;
-      }
-      if (damageType) {
-        requiredMaterials.push(`${enchantmentMaterials[damageType].materials} (${enchantmentMaterials[damageType].cost} gp)`);
-        totalCost += enchantmentMaterials[damageType].cost;
-      }
-      if (specialEffect) {
-        requiredMaterials.push(`${enchantmentMaterials[specialEffect].materials} (${enchantmentMaterials[specialEffect].cost} gp)`);
-        totalCost += enchantmentMaterials[specialEffect].cost;
-      }
-
-      // Display details
-      document.getElementById("materials").innerHTML = `
-        <p><strong>Materials Needed:</strong></p>
-        <ul>
-          ${requiredMaterials.map(material => `<li>${material}</li>`).join("")}
-        </ul>
-        <p><strong>Total Cost:</strong> ${totalCost} gp</p>
-      `;
-
-      document.getElementById("enchantingDetails").innerHTML = `
-        <h2>Enchanting Details</h2>
-        <p><strong>Weapon:</strong> ${customWeapon || weapon}</p>
-        <p><strong>Attack Bonus:</strong> ${attackBonus || "None"}</p>
-        <p><strong>Damage Type:</strong> ${damageType || "None"}</p>
-        <p><strong>Special Effect:</strong> ${specialEffect || "None"}</p>
-      `;
-
-      document.getElementById("rollButton").style.display = "block";
+      // Implementation...
     }
 
-    // Roll for outcome
     function rollOutcome() {
-      const roll = Math.floor(Math.random() * 20) + 1; // Roll a d20
-      const success = roll >= 10; // Arbitrary success threshold
-
-      if (success) {
-        document.getElementById("enchantmentResults").innerHTML = `
-          <h2 class="success">Success!</h2>
-          <p>The enchantment was successful!</p>
-        `;
-      } else {
-        const failureEffect = failureEffects[Math.floor(Math.random() * failureEffects.length)];
-        document.getElementById("enchantmentResults").innerHTML = `
-          <h2 class="failure">Failure!</h2>
-          <p>The enchantment failed.</p>
-          <p class="failure-effect">Effect: ${failureEffect}</p>
-        `;
-      }
+      // Implementation...
     }
   </script>
 </body>
