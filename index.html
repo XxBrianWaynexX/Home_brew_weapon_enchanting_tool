@@ -171,12 +171,89 @@
       "The weapon is cold to the touch."
     ];
 
+    // Generate enchanting details
     function generateEnchantingDetails() {
-      // Implementation...
+      const weapon = document.getElementById("weapon").value;
+      const customWeapon = document.getElementById("customWeapon").value;
+      const attackBonus = document.getElementById("attackBonus").value;
+      const damageType = document.getElementById("damageType").value;
+      const specialEffects = Array.from(document.getElementById("specialEffects").selectedOptions).map(opt => opt.value);
+      const classLevel = parseInt(document.getElementById("classLevel").value);
+      const proficiencyBonus = parseInt(document.getElementById("proficiencyBonus").value);
+
+      if ((!weapon && !customWeapon) || isNaN(classLevel) || isNaN(proficiencyBonus)) {
+        alert("Please fill out all required fields.");
+        return;
+      }
+
+      // Calculate material costs
+      let requiredMaterials = [];
+      let totalCost = 0;
+
+      if (attackBonus) {
+        requiredMaterials.push(`${enchantmentMaterials[attackBonus].materials} (${enchantmentMaterials[attackBonus].cost} gp)`);
+        totalCost += enchantmentMaterials[attackBonus].cost;
+      }
+      if (damageType) {
+        requiredMaterials.push(`${enchantmentMaterials[damageType].materials} (${enchantmentMaterials[damageType].cost} gp)`);
+        totalCost += enchantmentMaterials[damageType].cost;
+      }
+      specialEffects.forEach(effect => {
+        requiredMaterials.push(`${enchantmentMaterials[effect].materials} (${enchantmentMaterials[effect].cost} gp)`);
+        totalCost += enchantmentMaterials[effect].cost;
+      });
+
+      // Display materials and enchanting details
+      document.getElementById("materials").innerHTML = `
+        <p><strong>Materials Needed:</strong></p>
+        <ul>${requiredMaterials.map(material => `<li>${material}</li>`).join("")}</ul>
+        <p><strong>Total Cost:</strong> ${totalCost} gp</p>
+      `;
+
+      document.getElementById("enchantingDetails").innerHTML = `
+        <h2>Enchanting Details</h2>
+        <p><strong>Weapon:</strong> ${customWeapon || weapon}</p>
+        <p><strong>Attack Bonus:</strong> ${attackBonus || "None"}</p>
+        <p><strong>Damage Type:</strong> ${damageType || "None"}</p>
+        <p><strong>Special Effects:</strong> ${specialEffects.join(", ") || "None"}</p>
+      `;
+
+      document.getElementById("rollButton").style.display = "block";
     }
 
+    // Roll for outcome
     function rollOutcome() {
-      // Implementation...
+      const classLevel = parseInt(document.getElementById("classLevel").value);
+      const proficiencyBonus = parseInt(document.getElementById("proficiencyBonus").value);
+      const weapon = document.getElementById("weapon").value || document.getElementById("customWeapon").value;
+      const baseDC = 10;
+      const attackBonus = document.getElementById("attackBonus").value ? parseInt(document.getElementById("attackBonus").value.replace("+", "")) * 5 : 0;
+      const damageType = document.getElementById("damageType").value ? 5 : 0;
+      const specialEffects = Array.from(document.getElementById("specialEffects").selectedOptions).length * 5;
+      const craftingDC = baseDC + attackBonus + damageType + specialEffects;
+
+      const roll = Math.floor(Math.random() * 20) + 1;
+      const totalRoll = roll + classLevel + proficiencyBonus;
+
+      let resultMessage = "";
+      if (totalRoll >= craftingDC) {
+        resultMessage = `<h2 class="success">Success!</h2><p>You successfully enchanted the ${weapon}!</p>`;
+      } else if (totalRoll >= craftingDC - 5) {
+        const quirk = quirks[Math.floor(Math.random() * quirks.length)];
+        resultMessage = `
+          <h2 class="success">Partial Success!</h2>
+          <p>The enchantment worked, but the weapon gained a quirk: <span class="quirk">${quirk}</span>.</p>
+        `;
+      } else {
+        const failureEffect = failureEffects[Math.floor(Math.random() * failureEffects.length)];
+        resultMessage = `
+          <h2 class="failure">Failure!</h2>
+          <p>The enchantment failed.</p>
+          <p class="failure-effect">Effect: ${failureEffect}</p>
+        `;
+      }
+
+      document.getElementById("enchantmentResults").innerHTML = resultMessage;
     }
   </script>
 </body>
